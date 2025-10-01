@@ -1,13 +1,12 @@
 import os
 
 import mlflow
-from flask import Flask, request, jsonify
 
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000"))
+MODEL_NAME = os.getenv("MODEL_NAME", "trip_duration")
+MODEL_STAGE = os.getenv("MODEL_STAGE", "staging")
+model = mlflow.pyfunc.load_model(f"models:/{MODEL_NAME}/{MODEL_STAGE}")
 
-MODEL_VERSION = os.getenv('MODEL_VERSION')
-MODEL_URI = os.getenv('MODEL_URI')
-
-model = mlflow.pyfunc.load_model(MODEL_URI)
 
 
 def prepare_features(ride):
