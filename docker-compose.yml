@@ -1,0 +1,45 @@
+version: "3.9"
+services:
+  mlflow:
+    image: python:3.11-slim
+    working_dir: /app
+    command: >
+      sh -c "pip install --no-cache-dir mlflow==2.7.1 &&
+             mlflow server
+             --backend-store-uri sqlite:////mlflow/mlflow.db
+             --default-artifact-root file:///mlflow/artifacts
+             --host 0.0.0.0 --port 5000"
+    ports: ["5000:5000"]
+    volumes:
+      - mlflow_db:/mlflow
+      - mlflow_artifacts:/mlflow/artifacts
+
+  notebook:
+    build:
+      context: .
+      dockerfile: Dockerfile.train
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    ports: ["8888:8888"]
+    volumes:
+      - ./:/work
+      - mlflow_artifacts:/mlflow/artifacts
+    depends_on: [mlflow]
+
+  serve:
+    build:
+      context: .
+      dockerfile: Dockerfile.serve
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MODEL_NAME=trip_duration
+      - MODEL_STAGE=staging
+    command: gunicorn -b 0.0.0.0:9696 app:app
+    ports: ["9696:9696"]
+    volumes:
+      - mlflow_artifacts:/mlflow/artifacts
+    depends_on: [mlflow]
+
+volumes:
+  mlflow_db:
+  mlflow_artifacts:
