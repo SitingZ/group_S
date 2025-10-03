@@ -1,14 +1,11 @@
-import os
-import pandas as pd
+# serve/serve.py
+import os, json
 import mlflow
 from flask import Flask, request, jsonify
 
-# Point to the MLflow server (docker-compose service name)
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000"))
-MODEL_NAME = os.getenv("MODEL_NAME", "trip_duration")
+MODEL_NAME  = os.getenv("MODEL_NAME", "trip_duration")
 MODEL_STAGE = os.getenv("MODEL_STAGE", "staging")
-
-# Load once at startup
 model = mlflow.pyfunc.load_model(f"models:/{MODEL_NAME}/{MODEL_STAGE}")
 
 app = Flask(__name__)
@@ -19,14 +16,23 @@ def health():
 
 @app.post("/predict")
 def predict():
-    payload = request.get_json(force=True)
-    df = pd.DataFrame([payload])
-    # ensure string IDs if you trained them as strings
-    for col in ("PULocationID", "DOLocationID"):
-        if col in df.columns:
-            df[col] = df[col].astype(str)
-    y = model.predict(df)
-    return jsonify({"duration": float(y[0])})
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error="Expected a JSON object"), 400
+
+    # Build exactly one dict (types matching how you trained — usually str,str,float)
+    rec = {
+        "PULocationID": str(payload.get("PULocationID")),
+        "DOLocationID": str(payload.get("DOLocationID")),
+        "trip_distance": float(payload.get("trip_distance", 0)),
+    }
+
+    try:
+        # DictVectorizer expects a list of dicts
+        y = model.predict([rec])
+        return jsonify({"duration": float(y[0])})
+    except Exception as e:
+        return jsonify(error=type(e).__name__, detail=str(e), rec=rec), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=9696)
