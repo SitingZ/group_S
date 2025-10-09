@@ -53,8 +53,9 @@ services:
     command: gunicorn -b 0.0.0.0:9697 app:app
     ports: ["9697:9697"]
     volumes:
-      - mlflow_artifacts:/mlflow/artifacts
+      - mlflow_data:/mlflow
     depends_on: [mlflow]
+    restart: unless-stopped
 
 volumes:
   mlflow_data:
