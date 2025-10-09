@@ -1,46 +1,38 @@
-import os
-
+# serve/serve.py
+import os, json
 import mlflow
+from flask import Flask, request, jsonify
 
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000"))
-MODEL_NAME = os.getenv("MODEL_NAME", "trip_duration")
+MODEL_NAME  = os.getenv("MODEL_NAME", "trip_duration")
 MODEL_STAGE = os.getenv("MODEL_STAGE", "staging")
 model = mlflow.pyfunc.load_model(f"models:/{MODEL_NAME}/{MODEL_STAGE}")
 
+app = Flask(__name__)
 
+@app.get("/health")
+def health():
+    return {"status": "ok", "model": f"{MODEL_NAME}@{MODEL_STAGE}"}
 
-def prepare_features(ride):
-    features = {}
-    features['PULocationID'] = str(ride['PULocationID'])
-    features['DOLocationID'] = str(ride['DOLocationID'])
-    features['trip_distance'] = ride['trip_distance']
-    return features
+@app.post("/predict")
+def predict():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error="Expected a JSON object"), 400
 
-
-def predict(features):
-    preds = model.predict(features)
-    return float(preds[0])
-
-
-app = Flask('duration-prediction')
-
-
-@app.route('/predict', methods=['POST'])
-def predict_endpoint():
-    ride = request.get_json()
-
-    features = prepare_features(ride)
-    pred = predict(features)
-
-    result = {
-        'preduction': {
-            'duration': pred,
-        },
-        'model_version': MODEL_VERSION
+    # Build exactly one dict (types matching how you trained — usually str,str,float)
+    rec = {
+        "PULocationID": str(payload.get("PULocationID")),
+        "DOLocationID": str(payload.get("DOLocationID")),
+        "trip_distance": float(payload.get("trip_distance", 0)),
     }
 
-    return jsonify(result)
-
+    try:
+        # DictVectorizer expects a list of dicts
+        y = model.predict([rec])
+        return jsonify({"duration": float(y[0])})
+    except Exception as e:
+        return jsonify(error=type(e).__name__, detail=str(e), rec=rec), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=9696)
+    app.run(host="0.0.0.0", port=9696)
