@@ -36,6 +36,20 @@ services:
       - mlflow_artifacts:/mlflow/artifacts
     depends_on: [mlflow]
 
+  serve_v2:
+    build:
+      context: .
+      dockerfile: Dockerfile.serve_v2
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MODEL_NAME=trip_duration
+      - MODEL_STAGE=staging
+    command: gunicorn -b 0.0.0.0:9697 app:app
+    ports: ["9697:9697"]
+    volumes:
+      - mlflow_artifacts:/mlflow/artifacts
+    depends_on: [mlflow]
+
 volumes:
   mlflow_db:
   mlflow_artifacts:
