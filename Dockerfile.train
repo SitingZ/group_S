@@ -2,4 +2,4 @@ FROM python:3.11-slim
 WORKDIR /work
 RUN pip install --no-cache-dir \
     jupyter scikit-learn==1.3.1 pandas pyarrow seaborn mlflow==2.7.1 pexpect
-CMD ["bash","-lc","jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --NotebookApp.token='' --NotebookApp.password=''"]
+CMD ["bash","-lc","jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"]
