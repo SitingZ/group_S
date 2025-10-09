@@ -1,5 +1,30 @@
+# Dockerfile.train
 FROM python:3.11-slim
 WORKDIR /work
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# (optional) tools helpful during labs
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential git curl && rm -rf /var/lib/apt/lists/*
+
+# Pin versions so CLI flags and extension manager are stable
 RUN pip install --no-cache-dir \
-    jupyter scikit-learn==1.3.1 pandas pyarrow seaborn mlflow==2.7.1 pexpect
-CMD ["bash","-lc","jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"]
+    jupyterlab==4.2.5 jupyter-server==2.14.2 ipywidgets==8.1.5 \
+    httpx==0.27.2 \
+    pandas pyarrow scikit-learn==1.3.1 seaborn mlflow==2.7.1 pexpect
+
+EXPOSE 8888
+
+# NOTE: allow root + bind on all interfaces
+CMD ["bash","-lc","jupyter lab \
+  --ServerApp.allow_root=True \
+  --ServerApp.ip=0.0.0.0 \
+  --ServerApp.port=8888 \
+  --ServerApp.root_dir=/work \
+  --ServerApp.token='' \
+  --ServerApp.password='' \
+  --ServerApp.allow_remote_access=True \
+  --ServerApp.trust_xheaders=True \
+  --no-browser"]
