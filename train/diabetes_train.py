@@ -13,9 +13,18 @@ np.random.seed(RANDOM_SEED)
 
 #  http://mlflow:5500
 # export MLFLOW_TRACKING_URI=http://localhost:5500
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
+
+if MLFLOW_TRACKING_URI:
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    mlflow.set_experiment("diabetes_progression")
+else:
+    print("⚠️ No MLflow server found — running in local-only mode (no tracking).")
+
+'''MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-mlflow.set_experiment("diabetes_progression")
+mlflow.set_experiment("diabetes_progression")'''
+
 
 def train(version: str, reg):
     Xy = load_diabetes(as_frame=True)
