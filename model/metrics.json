@@ -1,0 +1,7 @@
+{
+  "rmse": 53.85344583676594,
+  "model_version": "v0.1",
+  "n_train": 353,
+  "n_test": 89,
+  "random_seed": 42
+}
