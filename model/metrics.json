@@ -1,6 +1,6 @@
 {
-  "rmse": 53.85344583676594,
-  "model_version": "v0.1",
+  "rmse": 53.77745406534388,
+  "model_version": "v0.2",
   "n_train": 353,
   "n_test": 89,
   "random_seed": 42
